@@ -202,3 +202,6 @@ def main(prompt: str, n_tokens_to_generate: int = 10):
     # Decode the generated tokens back into text.
     output_ids = inputs[len(inputs) - n_tokens_to_generate:]
     output_text = encoder.decode(output_ids)
+
+if __name__ == "__main__":
+    main("Alan Turing theorized that computers would one day become", n_tokens_to_generate=10)
