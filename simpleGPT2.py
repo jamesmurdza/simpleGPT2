@@ -8,7 +8,7 @@ encoder, hparams, params = load_encoder_hparams_and_params(model_size, models_di
 
 """
 The hyperparameters look like this:
-{
+hparams = {
   "n_vocab": 50257,    # number of tokens in our vocabulary
   "n_ctx": 1024,       # maximum possible sequence length of the input
   "n_embd": 768,       # embedding dimension (determines the "width" of the network)
@@ -18,26 +18,46 @@ The hyperparameters look like this:
 """
 
 """
-The actual model parameters (the weights) look like this:
-{
-  "blocks": [
-    {
-      "attn": {
-        "c_attn": {"b": [ ... ], "w": [[ ... ]]},
-        "c_proj": {"b": [ ... ], "w": [[ ... ]]}
-      },
-      "ln_1": {"b": [ ... ], "g": [ ... ]},
-      "ln_2": {"b": [ ... ], "g": [ ... ]},
-      "mlp": {
-        "c_fc": {"b": [ ... ], "w": [[ ... ]]},
-        "c_proj": {"b": [ ... ], "w": [[ ... ]]}
-      }
-    },
-    ...
-  ],
-  "ln_f": {"b": [ ... ], "g": [ ... ]},
-  "wpe": [[ ... ]],
-  "wte": [[ ... ]]
+The actual model parameters (the weights, biases and encodings) take the following structure and shape:
+params = {
+    "blocks": [
+        {
+            "attn": {
+                "c_attn": {
+                    "b": np.ndarray(shape=(2304,), dtype=float32)
+                    "w": np.ndarray(shape=(768, 2304), dtype=float32)
+                }
+                "c_proj": {
+                    "b": np.ndarray(shape=(768,), dtype=float32)
+                    "w": np.ndarray(shape=(768, 768), dtype=float32)
+                }
+            }
+            "ln_1": {
+                "b": np.ndarray(shape=(768,), dtype=float32)
+                "g": np.ndarray(shape=(768,), dtype=float32)
+            }
+            "ln_2": {
+                "b": np.ndarray(shape=(768,), dtype=float32)
+                "g": np.ndarray(shape=(768,), dtype=float32)
+            }
+            "mlp": {
+                "c_fc": {
+                    "b": np.ndarray(shape=(3072,), dtype=float32)
+                    "w": np.ndarray(shape=(768, 3072), dtype=float32)
+                }
+                "c_proj": {
+                    "b": np.ndarray(shape=(768,), dtype=float32)
+                    "w": np.ndarray(shape=(3072, 768), dtype=float32)
+                }
+            }
+        }
+    ]
+    "ln_f": {
+        "b": np.ndarray(shape=(768,), dtype=float32)
+        "g": np.ndarray(shape=(768,), dtype=float32)
+    }
+    "wpe": np.ndarray(shape=(1024, 768), dtype=float32)
+    "wte": np.ndarray(shape=(50257, 768), dtype=float32)
 }
 As you can see, the parameters are divided into blocks, and each block is divided into weights for attention, layer normalization and a feed-forward network.
 """
