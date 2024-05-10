@@ -6,38 +6,41 @@ model_size: str = "124M"
 models_dir: str = "models"
 encoder, hparams, params = load_encoder_hparams_and_params(model_size, models_dir)
 
-# The hyperparameters look like this:
-# >>> hparams
-# {
-#   "n_vocab": 50257, # number of tokens in our vocabulary
-#   "n_ctx": 1024, # maximum possible sequence length of the input
-#   "n_embd": 768, # embedding dimension (determines the "width" of the network)
-#   "n_head": 12, # number of attention heads (n_embd must be divisible by n_head)
-#   "n_layer": 12 # number of layers (determines the "depth" of the network)
-# }
+"""
+The hyperparameters look like this:
+{
+  "n_vocab": 50257,    # number of tokens in our vocabulary
+  "n_ctx": 1024,       # maximum possible sequence length of the input
+  "n_embd": 768,       # embedding dimension (determines the "width" of the network)
+  "n_head": 12,        # number of attention heads (n_embd must be divisible by n_head)
+  "n_layer": 12        # number of layers (determines the "depth" of the network)
+}
+"""
 
-# The actual model parameters (the weights) look like this:
-# {
-#   "blocks": [
-#     {
-#       "attn": {
-#         "c_attn": {"b": [ ... ], "w": [[ ... ]]},
-#         "c_proj": {"b": [ ... ], "w": [[ ... ]]}
-#       },
-#       "ln_1": {"b": [ ... ], "g": [ ... ]},
-#       "ln_2": {"b": [ ... ], "g": [ ... ]},
-#       "mlp": {
-#         "c_fc": {"b": [ ... ], "w": [[ ... ]]},
-#         "c_proj": {"b": [ ... ], "w": [[ ... ]]}
-#       }
-#     },
-#     ...
-#   ],
-#   "ln_f": {"b": [ ... ], "g": [ ... ]},
-#   "wpe": [[ ... ]],
-#   "wte": [[ ... ]]
-# }
-# As you can see, the parameters datastructure is divided into blocks, and each block is divided into weights for attention, layer normalization and a feed-forward network.
+"""
+The actual model parameters (the weights) look like this:
+{
+  "blocks": [
+    {
+      "attn": {
+        "c_attn": {"b": [ ... ], "w": [[ ... ]]},
+        "c_proj": {"b": [ ... ], "w": [[ ... ]]}
+      },
+      "ln_1": {"b": [ ... ], "g": [ ... ]},
+      "ln_2": {"b": [ ... ], "g": [ ... ]},
+      "mlp": {
+        "c_fc": {"b": [ ... ], "w": [[ ... ]]},
+        "c_proj": {"b": [ ... ], "w": [[ ... ]]}
+      }
+    },
+    ...
+  ],
+  "ln_f": {"b": [ ... ], "g": [ ... ]},
+  "wpe": [[ ... ]],
+  "wte": [[ ... ]]
+}
+As you can see, the parameters are divided into blocks, and each block is divided into weights for attention, layer normalization and a feed-forward network.
+"""
 
 def gelu(x: np.ndarray) -> np.ndarray:
     """
