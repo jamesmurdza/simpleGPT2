@@ -8,9 +8,10 @@ encoder, hparams, params = load_encoder_hparams_and_params(model_size, models_di
 
 """
 The hyperparameters look like this:
+
 hparams = {
-  "n_vocab": 50257,    # number of tokens in our vocabulary
-  "n_ctx": 1024,       # maximum possible sequence length of the input
+  "n_vocab": 50257,    # number of tokens in the tokenizer
+  "n_ctx": 1024,       # context length of the model
   "n_embd": 768,       # embedding dimension (determines the "width" of the network)
   "n_head": 12,        # number of attention heads (n_embd must be divisible by n_head)
   "n_layer": 12        # number of layers (determines the "depth" of the network)
@@ -18,48 +19,61 @@ hparams = {
 """
 
 """
-The actual model parameters (the weights, biases and encodings) take the following structure and shape:
+The actual model parameters (weights, biases and encodings) take the following structure and shape.
+
 params = {
+
+    # Matrices for positional and token embeddings:
+    "wpe": np.ndarray(shape=(1024, 768), dtype=float32),  # Positional encoding matrix
+    "wte": np.ndarray(shape=(50257, 768), dtype=float32),  # Token embedding matrix
+    
+    # The encoder consists of a bunch of blocks with the same internal structure.
     "blocks": [
         {
-            "attn": {
-                "c_attn": {
-                    "b": np.ndarray(shape=(2304,), dtype=float32)
-                    "w": np.ndarray(shape=(768, 2304), dtype=float32)
-                }
-                "c_proj": {
-                    "b": np.ndarray(shape=(768,), dtype=float32)
-                    "w": np.ndarray(shape=(768, 768), dtype=float32)
-                }
-            }
+            # Inside each block, there's layer normalization.
             "ln_1": {
-                "b": np.ndarray(shape=(768,), dtype=float32)
-                "g": np.ndarray(shape=(768,), dtype=float32)
-            }
-            "ln_2": {
-                "b": np.ndarray(shape=(768,), dtype=float32)
-                "g": np.ndarray(shape=(768,), dtype=float32)
-            }
-            "mlp": {
-                "c_fc": {
-                    "b": np.ndarray(shape=(3072,), dtype=float32)
-                    "w": np.ndarray(shape=(768, 3072), dtype=float32)
-                }
+                "b": np.ndarray(shape=(768,), dtype=float32),  # Bias for layer normalization
+                "g": np.ndarray(shape=(768,), dtype=float32)  # Gain for layer normalization
+            },
+            # Then comes attention and projection.
+            "attn": {
+                # For attention, we have bias and weight.
+                "c_attn": {
+                    "b": np.ndarray(shape=(2304,), dtype=float32),  # Bias for attention
+                    "w": np.ndarray(shape=(768, 2304), dtype=float32)  # Weight for attention
+                },
+                # After attention, there's projection.
                 "c_proj": {
-                    "b": np.ndarray(shape=(768,), dtype=float32)
-                    "w": np.ndarray(shape=(3072, 768), dtype=float32)
+                    "b": np.ndarray(shape=(768,), dtype=float32),  # Bias for projection
+                    "w": np.ndarray(shape=(768, 768), dtype=float32)  # Weight for projection
                 }
-            }
+            },
+            # Then, there's also a multi-layer perceptron (feed-forward network).
+            "mlp": {
+                # It consists of fully connected layers.
+                "c_fc": {
+                    "b": np.ndarray(shape=(3072,), dtype=float32),  # Bias for the first FC layer
+                    "w": np.ndarray(shape=(768, 3072), dtype=float32)  # Weight for the first FC layer
+                },
+                "c_proj": {
+                    "b": np.ndarray(shape=(768,), dtype=float32),  # Bias for the second FC layer
+                    "w": np.ndarray(shape=(3072, 768), dtype=float32)  # Weight for the second FC layer
+                }
+            },
+            # Another layer normalization after the feed-forward part.
+            "ln_2": {
+                "b": np.ndarray(shape=(768,), dtype=float32),  # Bias for layer normalization
+                "g": np.ndarray(shape=(768,), dtype=float32)  # Gain for layer normalization
+            },
         }
-    ]
+    ],
+    # There's layer normalization at the end too.
     "ln_f": {
-        "b": np.ndarray(shape=(768,), dtype=float32)
-        "g": np.ndarray(shape=(768,), dtype=float32)
+        "b": np.ndarray(shape=(768,), dtype=float32),  # Bias for layer normalization
+        "g": np.ndarray(shape=(768,), dtype=float32)  # Gain for layer normalization
     }
-    "wpe": np.ndarray(shape=(1024, 768), dtype=float32)
-    "wte": np.ndarray(shape=(50257, 768), dtype=float32)
+    
 }
-As you can see, the parameters are divided into blocks, and each block is divided into weights for attention, layer normalization and a feed-forward network.
 """
 
 def gelu(x: np.ndarray) -> np.ndarray:
