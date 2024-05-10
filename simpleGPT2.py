@@ -1,6 +1,12 @@
 import numpy as np
 from typing import Dict
 
+# This is an implementation of GPT-2, which is a decoder-only transformer model by OpenAI.
+# My goal is to improve my own understanding by reading the transformer code line-by-line until it makes sense.
+# In the process, I'm adding an excessive amounts of comments, and marking parts that I don't understand.
+# In particular, the multi-headed attention is the most interesting, and also trickiest part for me to understand.
+# Hopefully, it will become the easiest to read open implementation for new learners!
+
 # Download the hyperparameters and parameters for the pretrained model.
 model_size: str = "124M"
 models_dir: str = "models"
@@ -215,6 +221,7 @@ def main(prompt: str, n_tokens_to_generate: int = 10):
         x = params['wte'][inputs] + params['wpe'][range(len(inputs))]
 
         # Create a causal mask for attention.
+        # This feature is specific to decoder-only transfers.
         # Dimension: [len(inputs), len(inputs)]
         causal_mask = (1 - np.tri(x.shape[0], dtype=x.dtype)) * -1e10
 
