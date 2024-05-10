@@ -19,7 +19,8 @@ hparams = {
 """
 
 """
-The actual model parameters (weights, biases and encodings) take the following structure and shape.
+The model parameters are what's normally called the "weights" of the model but they actually include: weights, biases, token encodings and positional encodings.
+By looking at the sizes of the parameter arrays, you can also determine the hyperparameters above.
 
 params = {
 
@@ -27,8 +28,8 @@ params = {
     "wpe": np.ndarray(shape=(1024, 768), dtype=float32),  # Positional encoding matrix
     "wte": np.ndarray(shape=(50257, 768), dtype=float32),  # Token embedding matrix
     
-    # The encoder consists of a bunch of blocks with the same internal structure.
-    "blocks": [
+    # The encoder consists of a bunch of blocks (12, to be precise) all with the same internal structure.
+    "blocks": <12>[
         {
             # Inside each block, there's layer normalization.
             "ln_1": {
@@ -76,6 +77,29 @@ params = {
 }
 """
 
+# The following function definitions are the basic building blocks of the transformer.
+# - Linear: Performs a simple linear transformation, used repeatedly throughout the code.
+# - GELU: Activation function used in the feed-forward neural network.
+# - Layer Normalization: Used to normalizes input tensors at the beginning and end of each block and also after all of the blocks.
+# - Feed Forward Network (FFN): A sequence of linear projections and activation functions.
+# - Softmax: Used in attentino to calculate scores.
+# - Multi-Head Attention: Computes attention scores and applies softmax to get weighted values.
+
+def linear(x: np.ndarray, w: np.ndarray, b: np.ndarray) -> np.ndarray:
+    """
+    Linear Transformation
+
+    Args:
+        x (np.ndarray): Input tensor of shape [m, in_features].
+        w (np.ndarray): Weight matrix of shape [in_features, out_features].
+        b (np.ndarray): Bias vector of shape [out_features].
+
+    Returns:
+        np.ndarray: Output tensor of shape [m, out_features], resulting from the linear transformation.
+    """
+    # Perform the linear transformation: multiply input with weight matrix and add bias
+    return x @ w + b
+  
 def gelu(x: np.ndarray) -> np.ndarray:
     """
     Gaussian Error Linear Unit (GELU) Activation Function
@@ -88,20 +112,6 @@ def gelu(x: np.ndarray) -> np.ndarray:
     """
     # Apply the GELU activation function
     return 0.5 * x * (1 + np.tanh(np.sqrt(2 / np.pi) * (x + 0.044715 * x**3)))
-
-def softmax(x: np.ndarray) -> np.ndarray:
-    """
-    Softmax Activation Function
-
-    Args:
-        x (np.ndarray): Input tensor.
-
-    Returns:
-        np.ndarray: Output tensor after applying the softmax activation function.
-    """
-    # Calculate the exponential of each element and normalize
-    exp_x = np.exp(x - np.max(x, axis=-1, keepdims=True))
-    return exp_x / np.sum(exp_x, axis=-1, keepdims=True)
 
 def layer_norm(x: np.ndarray, g: np.ndarray, b: np.ndarray, eps: float = 1e-5) -> np.ndarray:
     """
@@ -126,23 +136,6 @@ def layer_norm(x: np.ndarray, g: np.ndarray, b: np.ndarray, eps: float = 1e-5) -
     # Apply scale (gamma) and shift (beta) parameters
     return g * x_normalized + b
 
-
-def linear(x: np.ndarray, w: np.ndarray, b: np.ndarray) -> np.ndarray:
-    """
-    Linear Transformation
-
-    Args:
-        x (np.ndarray): Input tensor of shape [m, in_features].
-        w (np.ndarray): Weight matrix of shape [in_features, out_features].
-        b (np.ndarray): Bias vector of shape [out_features].
-
-    Returns:
-        np.ndarray: Output tensor of shape [m, out_features], resulting from the linear transformation.
-    """
-    # Perform the linear transformation: multiply input with weight matrix and add bias
-    return x @ w + b
-
-
 def ffn(x: np.ndarray, c_fc: Dict[str, np.ndarray], c_proj: Dict[str, np.ndarray]) -> np.ndarray:
     """
     Feed Forward Network
@@ -163,6 +156,20 @@ def ffn(x: np.ndarray, c_fc: Dict[str, np.ndarray], c_proj: Dict[str, np.ndarray
 
     return x
 
+def softmax(x: np.ndarray) -> np.ndarray:
+    """
+    Softmax Activation Function
+
+    Args:
+        x (np.ndarray): Input tensor.
+
+    Returns:
+        np.ndarray: Output tensor after applying the softmax activation function.
+    """
+    # Calculate the exponential of each element and normalize
+    exp_x = np.exp(x - np.max(x, axis=-1, keepdims=True))
+    return exp_x / np.sum(exp_x, axis=-1, keepdims=True)
+
 def attention(q: np.ndarray, k: np.ndarray, v: np.ndarray, mask: np.ndarray) -> np.ndarray:
     """
     Multi-Head Attention
@@ -177,6 +184,11 @@ def attention(q: np.ndarray, k: np.ndarray, v: np.ndarray, mask: np.ndarray) -> 
         np.ndarray: Output tensor of shape [n_q, d_v].
     """
     return softmax(q @ k.T / np.sqrt(q.shape[-1]) + mask) @ v
+
+# The program below is a very simple inference engine which uses the model parameters and function definitions to generate text.
+# The outermost loop generated a new token for each iteration.
+# Inside this is the transformer structure including a loop to run the 12 transformer blocks in series.
+# Finally, for each block there is a loop that calculates the attention for each of the 12 heads.
 
 def main(prompt: str, n_tokens_to_generate: int = 10):
     """
